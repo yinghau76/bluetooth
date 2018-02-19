@@ -42,6 +42,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.simplypatrick.gattclient.DeviceListActivity" />
         </activity>
+        <activity android:name=".DeviceLocatingActivity"></activity>
     </application>
 
 </manifest>

@@ -71,10 +71,20 @@ class DeviceListActivity : AppCompatActivity() {
         }
     }
 
-    class SimpleItemRecyclerViewAdapter(private val mParentActivity: DeviceListActivity,
-                                        private val mValues: Array<ScanResult>,
-                                        private val mTwoPane: Boolean) :
-            RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder>() {
+    override fun onResume() {
+        super.onResume()
+        startScanLeDevices()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopScanLeDevices()
+    }
+
+    class RecyclerViewAdapter(private val mParentActivity: DeviceListActivity,
+                              private val mValues: Array<ScanResult>,
+                              private val mTwoPane: Boolean) :
+            RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
 
         private val mOnClickListener: View.OnClickListener
 
@@ -121,23 +131,10 @@ class DeviceListActivity : AppCompatActivity() {
             return mValues.size
         }
 
-        inner class ViewHolder(mView: View) : RecyclerView.ViewHolder(mView) {
-            val mIdView: TextView = mView.title
-            val mContentView: TextView = mView.content
+        class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+            val mIdView: TextView = view.title
+            val mContentView: TextView = view.content
         }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.menu_scan -> startScanLeDevices()
-            R.id.menu_stop -> stopScanLeDevices()
-        }
-        return super.onOptionsItemSelected(item)
     }
 
     private val mLeScanCallback = object : ScanCallback() {
@@ -164,6 +161,6 @@ class DeviceListActivity : AppCompatActivity() {
     }
 
     private fun updateDeviceList() {
-        device_list.adapter = SimpleItemRecyclerViewAdapter(this, mDevices.values.toTypedArray(), mTwoPane)
+        device_list.adapter = RecyclerViewAdapter(this, mDevices.values.toTypedArray(), mTwoPane)
     }
 }
