@@ -1,7 +1,6 @@
 package com.simplypatrick.gattclient
 
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -32,7 +31,9 @@ import kotlinx.coroutines.experimental.launch
  */
 class DeviceListActivity : AppCompatActivity() {
     private lateinit var mBluetoothAdapter: BluetoothAdapter
-    private val mDevices = HashMap<BluetoothDevice, ScanResult>()
+
+    // Use an ArrayList to keep a stable list of scan results
+    private val mScanResults = ArrayList<ScanResult>()
 
     /**
      * Whether or not the activity is in two-pane mode, i.e. running on a tablet
@@ -82,7 +83,7 @@ class DeviceListActivity : AppCompatActivity() {
     }
 
     class RecyclerViewAdapter(private val mParentActivity: DeviceListActivity,
-                              private val mValues: Array<ScanResult>,
+                              private val mValues: ArrayList<ScanResult>,
                               private val mTwoPane: Boolean) :
             RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder>() {
 
@@ -119,7 +120,7 @@ class DeviceListActivity : AppCompatActivity() {
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = mValues[position]
             holder.mIdView.text = item.device.name ?: item.device.address
-            holder.mContentView.text = item.toString()
+            holder.mContentView.text = "RSSI: ${item.rssi}"
 
             with(holder.itemView) {
                 tag = item
@@ -140,11 +141,7 @@ class DeviceListActivity : AppCompatActivity() {
     private val mLeScanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             super.onScanResult(callbackType, result)
-
-            println("$callbackType $result")
-            mDevices[result.device] = result
-
-            updateDeviceList()
+            updateDeviceList(result)
         }
     }
 
@@ -160,7 +157,22 @@ class DeviceListActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateDeviceList() {
-        device_list.adapter = RecyclerViewAdapter(this, mDevices.values.toTypedArray(), mTwoPane)
+    private fun updateDeviceList(scanResult: ScanResult) {
+        if (device_list.adapter == null) {
+            device_list.adapter = RecyclerViewAdapter(this, mScanResults, mTwoPane)
+        }
+
+        // Linear search should be good enough for limited number of nearby devices.
+        for ((i, result) in mScanResults.withIndex()) {
+            if (result.device == scanResult.device) {
+                mScanResults[i] = scanResult
+
+                device_list.adapter.notifyItemChanged(i)
+                return
+            }
+        }
+
+        mScanResults.add(scanResult)
+        device_list.adapter.notifyItemInserted(mScanResults.size - 1)
     }
 }
