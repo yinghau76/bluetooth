@@ -1,6 +1,6 @@
 package com.simplypatrick.gattserver
 
-import android.arch.lifecycle.ViewModelProviders
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
@@ -12,11 +12,11 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
+import android.bluetooth.le.BluetoothLeAdvertiser
 import android.os.Bundle
 import android.os.ParcelUuid
-import android.support.v7.app.AppCompatActivity
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ConsoleActivity() {
 
     private val bluetoothManager by lazy {
         getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
@@ -24,30 +24,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-        val bta = bluetoothManager.adapter
-        if (bta.isEnabled) {
-            startAdvertising()
-            startServer()
-        } else {
-            bta.enable()
+        bluetoothManager.adapter?.let { bta ->
+            if (bta.isEnabled) {
+                startAdvertising()
+                startServer()
+            } else {
+                bta.enable()
+            }
         }
     }
 
     private lateinit var server: BluetoothGattServer
-
-    enum class ConnectionState(val state: Int) {
-        Disconnected(0),
-        Connecting(1),
-        Connected(2),
-        Disconnecting(3);
-
-        companion object {
-            private val map = ConnectionState.values().associateBy(ConnectionState::state)
-            fun fromInt(state: Int) = map[state]
-        }
-    }
+    private lateinit var advertiser: BluetoothLeAdvertiser
 
     private fun startServer() {
         server = bluetoothManager.openGattServer(this, object : BluetoothGattServerCallback() {
@@ -109,7 +98,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startAdvertising() {
-        val advertiser = bluetoothManager.adapter.bluetoothLeAdvertiser
+        advertiser = bluetoothManager.adapter.bluetoothLeAdvertiser
         advertiser.startAdvertising(
                 AdvertiseSettings.Builder()
                         .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
