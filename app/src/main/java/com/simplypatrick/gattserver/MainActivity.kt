@@ -26,6 +26,9 @@ class MainActivity : ConsoleActivity() {
         super.onCreate(savedInstanceState)
 
         bluetoothManager.adapter?.let { bta ->
+            println("Friendly name: ${bta.name}")
+            println("Adapter address: ${bta.address}")
+
             if (bta.isEnabled) {
                 startAdvertising()
                 startServer()
@@ -41,11 +44,12 @@ class MainActivity : ConsoleActivity() {
     private fun startServer() {
         server = bluetoothManager.openGattServer(this, object : BluetoothGattServerCallback() {
             override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
+                server.readPhy(device)
                 println("onConnectionStateChange: $status, ${ConnectionState.fromInt(newState)}")
             }
 
             override fun onCharacteristicReadRequest(device: BluetoothDevice?, requestId: Int, offset: Int, characteristic: BluetoothGattCharacteristic) {
-                println("onCharacteristicReadRequest: $requestId, $offset, $characteristic")
+                println("onCharacteristicReadRequest: reqId=$requestId, offset=$offset, characteristic=$characteristic")
                 val now = System.currentTimeMillis()
                 when (characteristic.uuid) {
                     TimeProfile.CURRENT_TIME -> server.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0,
@@ -71,27 +75,27 @@ class MainActivity : ConsoleActivity() {
             }
 
             override fun onPhyRead(device: BluetoothDevice?, txPhy: Int, rxPhy: Int, status: Int) {
-                println("onPhyRead: $txPhy, $rxPhy, $status")
+                println("onPhyRead: txPhy=$txPhy, rxPhy=$rxPhy, status=$status")
             }
 
             override fun onPhyUpdate(device: BluetoothDevice?, txPhy: Int, rxPhy: Int, status: Int) {
-                println("onPhyUpdate: $txPhy, $rxPhy, $status")
+                println("onPhyUpdate: txPhy=$txPhy, rxPhy=$rxPhy, status=$status")
             }
 
             override fun onNotificationSent(device: BluetoothDevice?, status: Int) {
-                println("onNotificationSent: $status")
+                println("onNotificationSent: status=$status")
             }
 
             override fun onMtuChanged(device: BluetoothDevice?, mtu: Int) {
-                println("onMtuChanged: $mtu")
+                println("onMtuChanged: mtu=$mtu")
             }
 
             override fun onExecuteWrite(device: BluetoothDevice?, requestId: Int, execute: Boolean) {
-                println("onExecuteWrite: $requestId, $execute")
+                println("onExecuteWrite: requestId=$requestId, execute=$execute")
             }
 
-            override fun onServiceAdded(status: Int, service: BluetoothGattService?) {
-                println("onServiceAdded: $service")
+            override fun onServiceAdded(status: Int, service: BluetoothGattService) {
+                println("onServiceAdded: status=$status uuid=${service.uuid} type=${service.type} instanceId=${service.instanceId}")
             }
         })
         server.addService(TimeProfile.createTimeService())
@@ -113,11 +117,11 @@ class MainActivity : ConsoleActivity() {
                         .build(),
                 object : AdvertiseCallback() {
                     override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
-                        println("LE Advertising started: $settingsInEffect")
+                        println("LE Advertising started: settings=$settingsInEffect")
                     }
 
                     override fun onStartFailure(errorCode: Int) {
-                        println("LE Advertising failed: $errorCode")
+                        println("LE Advertising failed: error=$errorCode")
                     }
                 }
         )
