@@ -20,7 +20,7 @@ open class ConsoleActivity : AppCompatActivity() {
     // SimpleDateFormat is not thread-safe. Use thread local storage to workaround it.
     private val dateFormat = object : ThreadLocal<SimpleDateFormat>() {
         override fun initialValue(): SimpleDateFormat {
-            return SimpleDateFormat("MM dd, yyyy 'at' H:mm:ss:SSS", Locale.US)
+            return SimpleDateFormat("H:mm:ss:SSS", Locale.US)
         }
     }
 
